@@ -1,0 +1,4 @@
+driver = org.firebirdsql.jdbc.FBDriver
+dbURL  = jdbc:firebirdsql:localhost/3050:C:/Program Files/Firebird/Firebird_2_1/examples/empbuild/employee.fdb
+user   = SYSDBA
+password = masterkey
