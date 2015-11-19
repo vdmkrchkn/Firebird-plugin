@@ -4,7 +4,6 @@
  */
 
 import javax.swing.*;
-
 import java.sql.*;
 import java.util.*;
 import java.io.*;
@@ -20,25 +19,28 @@ import javax.swing.table.AbstractTableModel;
 public class DataBaseFrame extends JFrame {
     public DataBaseFrame() {
         initCompanents();
-        execItem.addActionListener(new ActionListener() {
+        sExecMenuItem.addActionListener(new ActionListener() {
 
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {                 
                 // подключение к БД
                 try{
                     connect = getConnection();
-                    //DatabaseMetaData meta = connect.getMetaData();
+                    //DatabaseMetaData meta = connect.getMetaData();                    
+                    //System.out.println(meta.getMaxStatements());
                 }catch (ClassNotFoundException ex) {
                     System.out.println("Firebird JDBC driver not found");
+                    return;
                 }
                 catch(SQLException se){
                     System.out.println("No connection! "+se.getMessage());
-                }
+                    return;
+                }                
                 // получение запроса с окна ввода
-                String query = JTextArea1.getText();
+                String query = sQueryTextArea.getText();
                 //
-                if(JScrollPane2 != null)
-                    remove(JScrollPane2);
+                if(sTableScrollPane != null)
+                    remove(sTableScrollPane);
                 // определение вида запроса
                 if(query.substring(0, 6).compareToIgnoreCase("select") == 0)
                 {
@@ -49,9 +51,9 @@ public class DataBaseFrame extends JFrame {
                         rs = stat.executeQuery(query);
                         model = new ResultSetTableModel(rs);
     
-                        JTable1 = new JTable(model);
-                        JScrollPane2 = new JScrollPane(JTable1);                    
-                        add(JScrollPane2,new GBC(0, 3, 1, 3).setFill(GridBagConstraints.SOUTH).setWeight(100, 100));                    
+                        sResultTable = new JTable(model);
+                        sTableScrollPane = new JScrollPane(sResultTable);                    
+                        add(sTableScrollPane,new GBC(0, 3, 1, 3).setFill(GridBagConstraints.SOUTH).setWeight(100, 100));                    
                         pack();
                     }catch(SQLException se){
                         System.out.println(se.getMessage());
@@ -63,12 +65,12 @@ public class DataBaseFrame extends JFrame {
                 {
                     try{
                         stat = connect.createStatement();
-                        stat.executeUpdate(query);                          
+                        int nUpdRec = stat.executeUpdate(query);
+                        System.out.println(nUpdRec);
                     }catch(SQLException se){
                        System.out.println(se.getMessage());
                        JOptionPane.showMessageDialog(null, "Invalid database request", "Error", JOptionPane.ERROR_MESSAGE);
                        return;
-                       //System.out.println(r);
                     }
                     
                 }
@@ -78,7 +80,9 @@ public class DataBaseFrame extends JFrame {
     }
 
 
-
+    /**
+     * Начальная инициализация компонентов окна 
+     */
     private void initCompanents(){
        // установка ширины и высоты фрейма
         setSize(DEFAULT_W, DEFAULT_H);
@@ -98,29 +102,39 @@ public class DataBaseFrame extends JFrame {
         //создание объекта меню
         JMenu runMenu = new JMenu("Run");
         menuBar.add(runMenu);
-        execItem = new JMenuItem("Execute");
-        runMenu.add(execItem);
+        sExecMenuItem = new JMenuItem("Execute");
+        runMenu.add(sExecMenuItem);
         
         //создание компонентов
                      
         //добавление текстовой области к фрейму
-        JTextArea1 = new JTextArea(5,40);
-        JTextArea1.setText("select full_name, salary, hire_date  from employee where salary<50000");
-        JScrollPane1 = new JScrollPane(JTextArea1);
+        sQueryTextArea = new JTextArea(5,40);
+        sQueryTextArea.setText("select full_name, salary, hire_date  from employee where salary<50000");
+        sQueryScrollPane = new JScrollPane(sQueryTextArea);
                 
-        add(JScrollPane1,new GBC(0, 0, 1, 3).setFill(GridBagConstraints.NORTH).setWeight(100, 100));
+        add(sQueryScrollPane,new GBC(0, 0, 1, 3).setFill(GridBagConstraints.NORTH).setWeight(100, 100));
         pack();
     }
-
-    public static Connection getConnection() throws SQLException, ClassNotFoundException{
+    /**
+     * Установление соединения на основе свойств, заданных в файле database.properties
+     * @return Соединение с БД
+     * @throws SQLException
+     * @throws ClassNotFoundException
+     */
+    public static Connection getConnection()
+            throws SQLException, ClassNotFoundException{
         Properties pr = new Properties();
+        FileInputStream inp = null;
         try {
-            FileInputStream inp = new FileInputStream("database.prop");
-            pr.load(inp);
-            inp.close();
+            try {
+                inp = new FileInputStream("database.prop");
+                pr.load(inp);
+            } finally {
+                inp.close();
+            }
         } catch (IOException e) {
             return null;
-        }
+        }     
         String databaseURL = pr.getProperty("dbURL");
         String user = pr.getProperty("user");
         String password = pr.getProperty("password");
@@ -131,11 +145,11 @@ public class DataBaseFrame extends JFrame {
 
     public static final int DEFAULT_H = 600;
     public static final int DEFAULT_W = 800;    
-    private static JMenuItem execItem;
-    private static JTextArea JTextArea1;
-    private static JScrollPane JScrollPane1;
-    private static JScrollPane JScrollPane2;
-    private static JTable JTable1;
+    private static JMenuItem sExecMenuItem;
+    private static JTextArea sQueryTextArea;
+    private static JScrollPane sQueryScrollPane;
+    private static JScrollPane sTableScrollPane;
+    private static JTable sResultTable;
 
     private ResultSet rs;
     private ResultSetTableModel model;
@@ -151,7 +165,7 @@ class ResultSetTableModel extends AbstractTableModel {
             rsmd = rs.getMetaData();
         }
         catch(SQLException e){
-            System.out.println("Couldn't get metadata"+e.getMessage());
+            System.out.println("Couldn't get metadata" + e.getMessage());
         }
     }
     @Override
@@ -160,7 +174,7 @@ class ResultSetTableModel extends AbstractTableModel {
             return rsmd.getColumnName(c+1);
         }
         catch(SQLException e){
-            System.out.println("SQLException"+e.getMessage());
+            System.out.println("getColumnName(" + (c+1) + ")" + e.getMessage());
             return "";
         }
     }
@@ -170,7 +184,7 @@ class ResultSetTableModel extends AbstractTableModel {
             return rsmd.getColumnCount();
         }
         catch(SQLException e){
-            System.out.println("getColumnCount"+e.getMessage());
+            System.out.println("getColumnCount()" + e.getMessage());
             return 0;
         }
     }
@@ -181,7 +195,7 @@ class ResultSetTableModel extends AbstractTableModel {
             return rs.getRow();
         }
         catch(SQLException e){            
-            System.out.println("getRowCount"+e.getMessage());
+            System.out.println("getRowCount()" + e.getMessage());
             return 0;
         }
     }
@@ -192,7 +206,7 @@ class ResultSetTableModel extends AbstractTableModel {
             return rs.getObject(c + 1);
         }
         catch(SQLException e){
-            System.out.println("getValueAt"+e.getMessage());
+            System.out.println("getValueAt(" + (r+1) + "," + (c+1) + ")" + e.getMessage());
             return null;
         }
     }
