@@ -57,7 +57,7 @@ public class DataBaseFrame extends JFrame {
                         pack();
                     }catch(SQLException se){
                         System.out.println(se.getMessage());
-                        JOptionPane.showMessageDialog(null, "Invalid database request", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(DataBaseFrame.this, "Invalid database request", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                 }
@@ -69,7 +69,7 @@ public class DataBaseFrame extends JFrame {
                         System.out.println(nUpdRec);
                     }catch(SQLException se){
                        System.out.println(se.getMessage());
-                       JOptionPane.showMessageDialog(null, "Invalid database request", "Error", JOptionPane.ERROR_MESSAGE);
+                       JOptionPane.showMessageDialog(DataBaseFrame.this, "Invalid database request", "Error", JOptionPane.ERROR_MESSAGE);
                        return;
                     }
                     
