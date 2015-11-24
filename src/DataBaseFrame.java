@@ -16,18 +16,47 @@ import javax.swing.table.AbstractTableModel;
  * @author Vadim
  */
 @SuppressWarnings("serial")
-public class DataBaseFrame extends JFrame {
+public class DataBaseFrame extends JFrame {    
     public DataBaseFrame() {
         initCompanents();
+        sShowTablesMenuItem.addActionListener(new ActionListener() {
+            /**
+             * создание диалогового окна для отображения списка таблиц БД
+             */
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (sTablesInfoDialog == null) {
+                    Vector<String> tableNames;
+                    // подключение к БД
+                    try {
+                        connect = getConnection();
+                        // Получение имен таблиц
+                        DatabaseMetaData meta = connect.getMetaData();
+                        ResultSet rs = meta.getTables(null, null, "%",
+                                new String[] { "TABLE" });
+                        tableNames = new Vector<String>();
+                        while (rs.next()) {
+                            tableNames.add(rs.getString("TABLE_NAME"));                            
+                        }
+                    } catch (ClassNotFoundException ex) {
+                        System.out.println("Firebird JDBC driver not found");
+                        return;
+                    } catch (SQLException se) {
+                        System.out.println("No connection! " + se.getMessage());
+                        return;
+                    }
+                    sTablesInfoDialog = new ShowTablesDialog(DataBaseFrame.this, tableNames);
+                }
+                sTablesInfoDialog.setVisible(true);
+            }
+        });
         sExecMenuItem.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {                 
                 // подключение к БД
                 try{
-                    connect = getConnection();
-                    //DatabaseMetaData meta = connect.getMetaData();                    
-                    //System.out.println(meta.getMaxStatements());
+                    connect = getConnection();                    
                 }catch (ClassNotFoundException ex) {
                     System.out.println("Firebird JDBC driver not found");
                     return;
@@ -77,6 +106,7 @@ public class DataBaseFrame extends JFrame {
                 validate();               
         }
     });
+           
     }
 
 
@@ -91,7 +121,7 @@ public class DataBaseFrame extends JFrame {
         //начальная позиция окна определяется системой по-умолчанию
         this.setLocationByPlatform(true);
         //Размеры окна нельзя изменять
-        this.setResizable(false);        
+        this.setResizable(false);
         //создание диспетчера компоновки
         GridBagLayout layout = new GridBagLayout();
         setLayout(layout);        
@@ -99,19 +129,19 @@ public class DataBaseFrame extends JFrame {
         JMenuBar menuBar = new JMenuBar();
         //поместим её в верхнюю часть текущего фрейма
         this.setJMenuBar(menuBar);
-        //создание объекта меню
+        //создание пунктов меню
         JMenu runMenu = new JMenu("Run");
         menuBar.add(runMenu);
         sExecMenuItem = new JMenuItem("Execute");
         runMenu.add(sExecMenuItem);
-        
-        //создание компонентов
-                     
+        JMenu showMenu = new JMenu("Show");
+        menuBar.add(showMenu);
+        sShowTablesMenuItem = new JMenuItem("Tables");
+        showMenu.add(sShowTablesMenuItem);                           
         //добавление текстовой области к фрейму
         sQueryTextArea = new JTextArea(5,40);
         sQueryTextArea.setText("select full_name, salary, hire_date  from employee where salary<50000");
-        sQueryScrollPane = new JScrollPane(sQueryTextArea);
-                
+        sQueryScrollPane = new JScrollPane(sQueryTextArea);                
         add(sQueryScrollPane,new GBC(0, 0, 1, 3).setFill(GridBagConstraints.NORTH).setWeight(100, 100));
         pack();
     }
@@ -146,11 +176,13 @@ public class DataBaseFrame extends JFrame {
     public static final int DEFAULT_H = 600;
     public static final int DEFAULT_W = 800;    
     private static JMenuItem sExecMenuItem;
+    private static JMenuItem sShowTablesMenuItem;
     private static JTextArea sQueryTextArea;
     private static JScrollPane sQueryScrollPane;
     private static JScrollPane sTableScrollPane;
     private static JTable sResultTable;
-
+    private static JDialog sTablesInfoDialog;
+    
     private ResultSet rs;
     private ResultSetTableModel model;
     private Connection connect;
