@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.table.AbstractTableModel;
+
 /**
  *
  * @author Vadim
@@ -45,7 +46,7 @@ public class DataBaseFrame extends JFrame {
                         System.out.println("No connection! " + se.getMessage());
                         return;
                     }
-                    sTablesInfoDialog = new ShowTablesDialog(DataBaseFrame.this, tableNames);
+                    sTablesInfoDialog = new ShowTablesDialog(DataBaseFrame.this, tableNames, connect);
                 }
                 sTablesInfoDialog.setVisible(true);
             }
