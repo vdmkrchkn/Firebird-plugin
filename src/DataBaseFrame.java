@@ -37,8 +37,12 @@ public class DataBaseFrame extends JFrame {
                                 new String[] { "TABLE" });
                         tableNames = new Vector<String>();
                         while (rs.next()) {
-                            tableNames.add(rs.getString("TABLE_NAME"));                            
+                            tableNames.add(rs.getString("TABLE_NAME"));
                         }
+                    } catch (NullPointerException ne) {
+                        System.out.println("Showing tables listener: "
+                                + ne.getMessage());
+                        return;
                     } catch (ClassNotFoundException ex) {
                         System.out.println("Firebird JDBC driver not found");
                         return;
@@ -56,16 +60,18 @@ public class DataBaseFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {                 
                 // подключение к БД
-                try{
-                    connect = getConnection();                    
-                }catch (ClassNotFoundException ex) {
+                try {
+                    connect = getConnection();
+                } catch (NullPointerException ne) {
+                    System.out.println("Execute listener: " + ne.getMessage());
+                    return;
+                } catch (ClassNotFoundException ex) {
                     System.out.println("Firebird JDBC driver not found");
                     return;
-                }
-                catch(SQLException se){
-                    System.out.println("No connection! "+se.getMessage());
+                } catch (SQLException se) {
+                    System.out.println("No connection! " + se.getMessage());
                     return;
-                }                
+                }            
                 // получение запроса с окна ввода
                 String query = sQueryTextArea.getText();
                 //
@@ -161,10 +167,13 @@ public class DataBaseFrame extends JFrame {
                 inp = new FileInputStream("database.prop");
                 pr.load(inp);
             } finally {
-                inp.close();
+                if(inp != null)
+                    inp.close();
             }
+        } catch (FileNotFoundException e) {
+            throw new NullPointerException("Properties file not found");        
         } catch (IOException e) {
-            return null;
+            throw new NullPointerException("Invalid format of properties file");
         }     
         String databaseURL = pr.getProperty("dbURL");
         String user = pr.getProperty("user");
